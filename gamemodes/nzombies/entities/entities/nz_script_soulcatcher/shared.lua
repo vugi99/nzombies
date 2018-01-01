@@ -57,9 +57,9 @@ function ENT:Reset()
 	self.CurrentAmount = 0
 end
 
-function ENT:ReleaseSoul( z )
+function ENT:ReleaseSoul( z, dmg, dist )
 	if self.ReleaseOverride then
-		self:ReleaseOverride(z) -- You can override the effect and count logic with this
+		self:ReleaseOverride(z, dmg) -- You can override the effect and count logic with this
 	else
 		if self.CurrentAmount >= self.TargetAmount then return end
 		local e = EffectData()
@@ -67,6 +67,11 @@ function ENT:ReleaseSoul( z )
 		e:SetEntity(self)
 		util.Effect("zombie_soul", e)
 		self.CurrentAmount = self.CurrentAmount + 1
+		timer.Simple(dist/50, function()
+			if IsValid(self) then
+				self:CollectSoul()
+			end
+		end)
 	end
 end
 
@@ -80,9 +85,12 @@ end
 hook.Add("EntityTakeDamage", "SoulCatchZombies", function(ent, dmg)
 	if ent:IsValidZombie() and ent:Health() <= dmg:GetDamage() then
 		for k,v in pairs(ents.FindByClass("nz_script_soulcatcher")) do
-			if v.Enabled and ent:GetPos():DistToSqr(v:GetPos()) <= v.Range and v:Condition(ent, dmg) then
-				v:ReleaseSoul(ent)
-				break
+			if v.Enabled and v:Condition(ent, dmg) then
+				local dist = ent:GetPos():DistToSqr(v:GetPos())
+				if dist <= v.Range then
+					v:ReleaseSoul(ent, dmg, math.sqrt(dist))
+					break
+				end
 			end
 		end
 	end

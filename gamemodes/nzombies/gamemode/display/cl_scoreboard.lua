@@ -80,8 +80,8 @@ local PLAYER_LINE = {
 		self.Items.Paint = function(pnl)
 			surface.SetDrawColor(255, 255, 255)
 			local num = 0
-			for k,v in pairs(self.Player:GetCarryItems()) do
-				local item = nzItemCarry.Items[v]
+			for k,v in pairs(self.Player:GetCarryItemModifiers()) do
+				local item = nzItemCarry.Items[k]
 				if item and (item.icon or item.model) then
 					local x, y = pnl:GetPos()
 					

@@ -4,8 +4,8 @@ local function DrawItemCarryHud()
 	local ply = LocalPlayer()
 	surface.SetDrawColor(255,255,255)
 	local num = 0
-	for k,v in pairs(ply:GetCarryItems()) do
-		local item = nzItemCarry.Items[v]
+	for k,v in pairs(ply:GetCarryItemModifiers()) do
+		local item = nzItemCarry.Items[k]
 		if item then
 			if item.model then
 				surface.SetMaterial(item.model)
@@ -18,6 +18,7 @@ local function DrawItemCarryHud()
 				surface.SetMaterial(item.icon)
 				surface.DrawTexturedRect(ScrW() - 400*scale - num*40*scale, ScrH() - 90*scale, 30*scale, 30*scale)
 			end
+			if v and v != "" then draw.SimpleTextOutlined(v, nil, ScrW() - 400*scale - num*40*scale, ScrH() - 70*scale, nil,nil,nil, 1, color_black) end
 			num = num + 1
 		end
 	end
@@ -29,9 +30,11 @@ local itemnotif = itemnotif or {}
 net.Receive( "nzItemCarryPlayersNotif", function()
 	local ply = net.ReadEntity()
 	local id = net.ReadString()
+	local item = nzItemCarry.Items[id]
 	
 	if itemnotif[id] then
 		itemnotif[id].time = CurTime() + 5
+		itemnotif[id].player = IsValid(ply) and ply or nil
 		if IsValid(itemnotif[id].avatar) then
 			if IsValid(ply) then
 				itemnotif[id].avatar:SetPlayer(ply)
@@ -48,7 +51,6 @@ net.Receive( "nzItemCarryPlayersNotif", function()
 			end
 		end
 	else
-		local item = nzItemCarry.Items[id]
 		local avatar
 		if IsValid(ply) then
 			avatar = vgui.Create("AvatarImage")
@@ -60,11 +62,12 @@ net.Receive( "nzItemCarryPlayersNotif", function()
 			itemnotif[id] = {
 				avatar = avatar,
 				time = CurTime() + 5,
+				player = ply,
 			}
 		end
 	end
 	
-	surface.PlaySound("nz/easteregg/ee_item_grab1.wav")
+	surface.PlaySound(item.notifsound)
 end)
 
 local function DrawItemCarryNotifications()
@@ -88,6 +91,7 @@ local function DrawItemCarryNotifications()
 			end
 			
 			local x = ScrW() - 96 - num*66
+			local str = IsValid(v.player) and v.player:HasCarryItem(k) or nil
 			
 			if item.model then
 				surface.SetMaterial(item.model)
@@ -100,6 +104,7 @@ local function DrawItemCarryNotifications()
 				surface.SetMaterial(item.icon)
 				surface.DrawTexturedRect(x, 32, 64, 64)
 			end
+			if str then draw.SimpleTextOutlined(str, nil, x, 32, nil,nil,nil, 1, color_black) end
 			
 			if IsValid(avatar) then
 				avatar:SetPos(x + 32, 75)

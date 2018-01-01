@@ -5,11 +5,23 @@ if SERVER then
 	local plyMeta = FindMetaTable("Player")
 	
 	function plyMeta:GivePowerUp(id, duration)
+		local data = nzPowerUps:Get(id)
+		if data.global then return end
+		
+		local duration = duration or data.duration
+		
+		if !nzPowerUps.ActivePlayerPowerUps[self] then nzPowerUps.ActivePlayerPowerUps[self] = {} end
+		if not nzPowerUps.ActivePlayerPowerUps[self][id] then
+			data.func(id, self)
+		end
+		
 		if duration > 0 then
-			if !nzPowerUps.ActivePlayerPowerUps[self] then nzPowerUps.ActivePlayerPowerUps[self] = {} end
-			
 			nzPowerUps.ActivePlayerPowerUps[self][id] = CurTime() + duration
 			nzPowerUps:SendPlayerSync(self) -- Sync this player's powerups
+		end
+		-- Notify
+		if data.announcement then
+			nzNotifications:PlaySound(data.announcement, 1)
 		end
 	end
 	
@@ -40,10 +52,7 @@ if SERVER then
 
 		if !PowerupData.global then
 			if IsValid(ply) then
-				if not nzPowerUps.ActivePlayerPowerUps[ply] or not nzPowerUps.ActivePlayerPowerUps[ply][id] then -- If you don't have the powerup
-					PowerupData.func(id, ply)
-				end
-				ply:GivePowerUp(id, PowerupData.duration)
+				ply:GivePowerUp(id)
 			end
 		else
 			if PowerupData.duration != 0 then
@@ -59,13 +68,13 @@ if SERVER then
 			-- Sync to everyone
 			self:SendSync()
 			
+			-- Notify
+			if PowerupData.announcement then
+				nzNotifications:PlaySound(PowerupData.announcement, 1)
+			end
 		end
-
-		-- Notify
+		
 		if IsValid(ply) then ply:EmitSound("nz/powerups/power_up_grab.wav") end
-		if PowerupData.announcement then
-			nzNotifications:PlaySound(PowerupData.announcement, 1)
-		end
 	end
 
 	function nzPowerUps:SpawnPowerUp(pos, specific)

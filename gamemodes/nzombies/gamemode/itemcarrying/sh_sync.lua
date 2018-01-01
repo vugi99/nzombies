@@ -18,6 +18,7 @@ if SERVER then
 			hastext = data.hastext,
 			icon = data.icon,
 			model = data.model,
+			notifsound = data.notifsound
 		}
 		
 		net.Start( "nzItemCarryUpdate" )

@@ -25,6 +25,7 @@ if SERVER then
 			ent:Remove()
 		end,
 		notif = true,
+		notifsound = "nz/easteregg/ee_item_grab1.wav",
 	}
 
 	-- Functions to call during runtime
@@ -90,6 +91,9 @@ if SERVER then
 		-- Sets whether this item will display a notification to all players when picked up
 		SetShowNotification = function(self, bool)
 			self.notif = bool
+		end,
+		SetNotificationSound = function(self, path)
+			self.notifsound = path
 		end,
 		-- Sets the function to reset the item(s). Typically used to respawn them back at the original spot
 		Reset = function(self)

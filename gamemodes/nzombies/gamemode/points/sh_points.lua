@@ -9,7 +9,7 @@ function _PLAYER:HasPoints(amount)
 end
 
 function _PLAYER:CanAfford(amount)
-	return (self:GetPoints() - amount) >= 0
+	return self:GetPoints() >= amount
 end
 
 

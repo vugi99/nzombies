@@ -10,8 +10,6 @@ function EFFECT:Init( data )
 	
 	self.Emitter = ParticleEmitter( self.Start )
 	
-	print(self.Emitter, self.NextParticle, self, self.Catcher)
-	
 end
 
 
@@ -40,7 +38,6 @@ function EFFECT:Think( )
 	end
 	self.Emitter:SetPos( (self.Catcher:GetPos()-self.Emitter:GetPos()):GetNormal() * self.MoveSpeed * FrameTime() + self.Emitter:GetPos() )
 	if self.Emitter:GetPos():DistToSqr(self.Catcher:GetPos()) <= self.DistToCatch then
-		self.Catcher:CollectSoul()
 		return false
 	else
 		return true

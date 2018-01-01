@@ -9,11 +9,9 @@ ENT.Purpose			= ""
 ENT.Instructions	= ""
 
 ENT.NZOnlyVisibleInCreative = true
-ENT.PlankPullOffTime = 1.25
 
 -- models/props_interiors/elevatorshaft_door01a.mdl
 -- models/props_debris/wood_board02a.mdl
-
 function ENT:Initialize()
 
 	self:SetModel("models/props_c17/fence01b.mdl")
@@ -22,62 +20,40 @@ function ENT:Initialize()
 
 	--self:SetHealth(0)
 	self:SetCustomCollisionCheck(true)
+	self.NextPlank = CurTime()
+
+	self.Planks = {}
 
 	if SERVER then
-		self.NextPlank = CurTime()
-		self.Planks = {}
-		self:SetMaxPlanks(6) --GetConVar("nz_difficulty_barricade_planks_max"):GetInt()
 		self:ResetPlanks(true)
-		self.AttachedZombies = {}
 	end
 end
 
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", 0, "NumPlanks" )
-	self:NetworkVar( "Int", 1, "MaxPlanks" )
 	self:NetworkVar( "Bool", 0, "HasPlanks" )
 	self:NetworkVar( "Bool", 1, "TriggerJumps" )
 
 end
 
-function ENT:GetPlank(num)
-	return self.Planks[num]
-end
-function ENT:GetNextBrokenPlank()
-	local max = self:GetMaxPlanks()
-	for i = 1, max do
-		if not IsValid(self.Planks[i]) then return i end
-	end
-end
-function ENT:GetNextRepairedPlank()
-	local max = self:GetMaxPlanks()
-	for i = max, 1, -1 do
-		if IsValid(self.Planks[i]) and self.Planks[i].Repaired then return self.Planks[i],i end
-	end
-end
-
 function ENT:AddPlank(nosound)
 	if !self:GetHasPlanks() then return end
+	self:SpawnPlank()
+	self:SetNumPlanks( (self:GetNumPlanks() or 0) + 1 )
+	if !nosound then
+		self:EmitSound("nz/effects/board_slam_0"..math.random(0,5)..".wav")
+	end
+end
+
+function ENT:RemovePlank()
+
+	local plank = table.Random(self.Planks)
 	
-	if self:SpawnPlank(self:GetNextBrokenPlank()) then
-		self:SetNumPlanks( (self:GetNumPlanks() or 0) + 1 )
-		if !nosound then
-			self:EmitSound("nz/effects/board_slam_0"..math.random(0,5)..".wav")
-		end
+	if !IsValid(plank) and plank != nil then -- Not valid but not nil (NULL)
+		table.RemoveByValue(self.Planks, plank) -- Remove it from the table
+		self:RemovePlank() -- and try again
 	end
-end
-
-function ENT:GrabPlank(zombie, plank)
-	if IsValid(plank) and IsValid(zombie) then
-		plank.Repaired = false
-	end
-	return CurTime() + self.PlankPullOffTime
-end
-
-function ENT:RemovePlank(plank, dir)
-
-	local plank = plank or self:GetNextRepairedPlank()
 	
 	if IsValid(plank) then
 		-- Drop off
@@ -85,15 +61,12 @@ function ENT:RemovePlank(plank, dir)
 		plank:PhysicsInit(SOLID_VPHYSICS)
 		local entphys = plank:GetPhysicsObject()
 		if entphys:IsValid() then
-			entphys:EnableGravity(true)
-			entphys:Wake()
-			if dir then
-				entphys:SetVelocity(dir*200)
-			end
+			 entphys:EnableGravity(true)
+			 entphys:Wake()
 		end
 		plank:SetCollisionGroup( COLLISION_GROUP_DEBRIS )
 		-- Remove
-		SafeRemoveEntityDelayed(plank, 1)
+		timer.Simple(2, function() if IsValid(plank) then plank:Remove() end end)
 	end
 	
 	table.RemoveByValue(self.Planks, plank)
@@ -101,8 +74,13 @@ function ENT:RemovePlank(plank, dir)
 end
 
 function ENT:ResetPlanks(nosoundoverride)
+	for i=1, table.Count(self.Planks) do
+		self:RemovePlank()
+	end
+	self.Planks = {}
+	self:SetNumPlanks(0)
 	if self:GetHasPlanks() then
-		for i=1, self:GetMaxPlanks() do
+		for i=1, GetConVar("nz_difficulty_barricade_planks_max"):GetInt() do
 			self:AddPlank(!nosoundoverride)
 		end
 	end
@@ -110,7 +88,7 @@ end
 
 function ENT:Use( activator, caller )
 	if CurTime() > self.NextPlank then
-		if self:GetHasPlanks() and self:GetNumPlanks() < self:GetMaxPlanks() then
+		if self:GetHasPlanks() and self:GetNumPlanks() < GetConVar("nz_difficulty_barricade_planks_max"):GetInt() then
 			self:AddPlank()
                   activator:GivePoints(10)
 				  activator:EmitSound("nz/effects/repair_ching.wav")
@@ -119,77 +97,17 @@ function ENT:Use( activator, caller )
 	end
 end
 
-local plankpos = {
-	{Vector(-1,0,30),110},
-	{Vector(-3,15,15),-12},
-	{Vector(-3,-15,15),8},
-	{Vector(-5,0,30),85},
-	{Vector(-5,0,20),95},
-	{Vector(-5,0,0),80},
-}
-function ENT:SpawnPlank(num)
+function ENT:SpawnPlank()
 	-- Spawn
-	if IsValid(self.Planks[num]) then return end
-	
+	local angs = {-60,-70,60,70}
 	local plank = ents.Create("breakable_entry_plank")
-	local pos, ang
-	if num > #plankpos then
-		local angs = {-60,-70,60,70}
-		local min = self:GetTriggerJumps() and 0 or -45
-		pos = Vector(0,0, math.random( min, 45 ))
-		ang = table.Random(angs)
-	else
-		pos = plankpos[num][1]
-		ang = plankpos[num][2]
-	end
-	
+	local min = self:GetTriggerJumps() and 0 or -45
+	plank:SetPos( self:GetPos()+Vector(0,0, math.random( min, 45 )) )
+	plank:SetAngles( Angle(0,self:GetAngles().y, table.Random(angs)) )
+	plank:Spawn()
 	plank:SetParent(self)
 	plank:SetCollisionGroup( COLLISION_GROUP_DEBRIS )
-	plank:Repair(self, pos, ang)
-	plank:Spawn()
-	
-	self.Planks[num] = plank
-	
-	return true
-end
-
-local POS_BACK_M = 1
-local POS_BACK_L = 2
-local POS_BACK_R = 3
-local POS_FRONT_M = 4
-local POS_FRONT_L = 5
-local POS_FRONT_R = 6
-local attachpos = {
-	Vector(35,0,-45),
-	Vector(3,-2,-45),
-	Vector(3,2,-45),
-	Vector(-10,0,-45),
-	Vector(-3,-2,-45),
-	Vector(-3,2,-45),
-}
-function ENT:GetEmptyAttachSlot(zombie)
-	local side = (zombie:GetPos()-self:GetPos()):Dot(self:GetAngles():Forward()) < 0 and 4 or 1
-	for i = side,side+2 do
-		if not IsValid(self.AttachedZombies[i]) then return i end
-	end
-end
-function ENT:GetAttachPosition(pos)
-	local v = attachpos[pos]
-	if v then
-		local vec = Vector(v.x,v.y,v.z)
-		local ang = self:GetAngles()
-		vec:Rotate(ang)
-		if pos < 4 then
-			ang = (ang:Forward()*-1):Angle()
-		end
-		return vec + self:GetPos(), ang
-	end
-end
-function ENT:AttachZombie(zombie, pos)
-	if not IsValid(self.AttachedZombies[pos]) then
-		self.AttachedZombies[pos] = zombie
-		return true
-	end
+	table.insert(self.Planks, plank)
 end
 
 function ENT:Touch(ent)

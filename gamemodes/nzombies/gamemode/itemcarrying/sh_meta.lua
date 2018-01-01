@@ -1,41 +1,35 @@
 local playerMeta = FindMetaTable("Player")
 if SERVER then
 
-	function playerMeta:GiveCarryItem(id, alloverride)
+	function playerMeta:GiveCarryItem(id, modstr)
 		if !nzItemCarry.Players[self] then nzItemCarry.Players[self] = {} end
-		if nzItemCarry.Items[id].shared and !alloverride then -- If shared, give to all players
+		if nzItemCarry.Items[id].shared then -- If shared, give to all players
 			for k,v in pairs(player.GetAllPlaying()) do
-				if !table.HasValue(nzItemCarry.Players[v], id) then
-					table.insert(nzItemCarry.Players[v], id)
-				end
+				nzItemCarry.Players[v][id] = modstr or nzItemCarry.Players[v][id] or ""
 			end
 			nzItemCarry:SendPlayerItem()
 			if nzItemCarry.Items[id].notif then
 				nzItemCarry:SendPlayerItemNotification(nil, id)
 			end
 		else
-			if !table.HasValue(nzItemCarry.Players[self], id) then
-				table.insert(nzItemCarry.Players[self], id)
-				nzItemCarry:SendPlayerItem(self)
-				if nzItemCarry.Items[id].notif then
-					nzItemCarry:SendPlayerItemNotification(self, id)
-				end
+			nzItemCarry.Players[self][id] = modstr or nzItemCarry.Players[self][id] or ""
+			nzItemCarry:SendPlayerItem(self)
+			if nzItemCarry.Items[id].notif then
+				nzItemCarry:SendPlayerItemNotification(self, id)
 			end
 		end
 	end
 	
-	function playerMeta:RemoveCarryItem(id, alloverride)
+	function playerMeta:RemoveCarryItem(id)
 		if !nzItemCarry.Players[self] then nzItemCarry.Players[self] = {} end
-		if nzItemCarry.Items[id].shared and !alloverride then -- If shared, remove from all players
+		if nzItemCarry.Items[id].shared then -- If shared, remove from all players
 			for k,v in pairs(player.GetAllPlaying()) do
-				if table.HasValue(nzItemCarry.Players[v], id) then
-					table.RemoveByValue(nzItemCarry.Players[v], id)
-				end
+				nzItemCarry.Players[v][id] = nil
 			end
 			nzItemCarry:SendPlayerItem()
 		else
-			if table.HasValue(nzItemCarry.Players[self], id) then
-				table.RemoveByValue(nzItemCarry.Players[self], id)
+			if nzItemCarry.Players[self][id] then
+				nzItemCarry.Players[self][id] = nil
 				nzItemCarry:SendPlayerItem(self)
 			end
 		end
@@ -45,10 +39,15 @@ end
 
 function playerMeta:HasCarryItem(id)
 	if !nzItemCarry.Players[self] then nzItemCarry.Players[self] = {} end
-	return table.HasValue(nzItemCarry.Players[self], id)
+	return nzItemCarry.Players[self][id]
 end
 
 function playerMeta:GetCarryItems()
+	if !nzItemCarry.Players[self] then nzItemCarry.Players[self] = {} end
+	return table.GetKeys(nzItemCarry.Players[self])
+end
+
+function playerMeta:GetCarryItemModifiers()
 	if !nzItemCarry.Players[self] then nzItemCarry.Players[self] = {} end
 	return nzItemCarry.Players[self]
 end

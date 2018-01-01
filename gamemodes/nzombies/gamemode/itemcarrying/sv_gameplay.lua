@@ -9,7 +9,7 @@ function nzItemCarry.OnPlayerPickItemUp( ply, ent )
 	-- Used in map scripting
 	if ent.OnUsed and type(ent.OnUsed) == "function" then
 		if ply:KeyPressed(IN_USE) then
-			ent:OnUsed(ply)
+			if ent:OnUsed(ply) then return false end
 		end
 	end
 	
