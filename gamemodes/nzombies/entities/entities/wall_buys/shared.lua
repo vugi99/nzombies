@@ -82,7 +82,7 @@ function ENT:RecalculateModelOutlines()
 		local offset = curang:Up()*0.5 + curang:Forward()*-0.5 --Vector(0,-0.5,0.5)
 		self.Chalk1:SetPos(curpos + offset)
 		self.Chalk1:SetAngles(ang)
-		self.Chalk1:SetMaterial(chalkmaterial)
+		--self.Chalk1:SetMaterial(chalkmaterial) -- e
 		--self.Chalk:SetModelScale(1.7)
 			
 		local mat = Matrix()
@@ -98,7 +98,7 @@ function ENT:RecalculateModelOutlines()
 		offset = curang:Up()*-0.5 + curang:Forward()*0.5
 		self.Chalk2:SetPos(curpos + offset)
 		self.Chalk2:SetAngles(ang)
-		self.Chalk2:SetMaterial(chalkmaterial)
+		--self.Chalk2:SetMaterial(chalkmaterial) -- e
 		--self.Chalk:SetModelScale(1.7)
 			
 		mat = Matrix()
@@ -114,7 +114,7 @@ function ENT:RecalculateModelOutlines()
 		offset = curang:Up()*0.5 + curang:Forward()*0.5
 		self.Chalk3:SetPos(curpos + offset)
 		self.Chalk3:SetAngles(ang)
-		self.Chalk3:SetMaterial(chalkmaterial)
+		--self.Chalk3:SetMaterial(chalkmaterial) --e
 		--self.Chalk:SetModelScale(1.7)
 			
 		mat = Matrix()
@@ -130,7 +130,7 @@ function ENT:RecalculateModelOutlines()
 		offset = curang:Up()*-0.5 + curang:Forward()*-0.5
 		self.Chalk4:SetPos(curpos + offset)
 		self.Chalk4:SetAngles(ang)
-		self.Chalk4:SetMaterial(chalkmaterial)
+		--self.Chalk4:SetMaterial(chalkmaterial) -- e
 		--self.Chalk:SetModelScale(1.7)
 			
 		mat = Matrix()
@@ -145,7 +145,7 @@ function ENT:RecalculateModelOutlines()
 		self.ChalkCenter = ClientsideModel(model)
 		self.ChalkCenter:SetPos(curpos)
 		self.ChalkCenter:SetAngles(ang)
-		self.ChalkCenter:SetMaterial(chalkmaterial)
+		--self.ChalkCenter:SetMaterial(chalkmaterial) -- e
 			
 		mat = Matrix()
 		mat:Scale( self.Flipped and flipscale or normalscale )
